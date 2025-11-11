@@ -479,8 +479,13 @@ def visualize_test_predictions(model, test_set, num_samples=5):
 
 def process_videos(model, model_name='UNet_baseline'):
     """Process videos if available"""
-    # Look for videos in common locations
+    # Define testing videos directory
+    testing_dir = os.path.join(DATASET_DIR, 'testing')
+    
+    # Look for videos in testing folder and other common locations
     video_patterns = [
+        os.path.join(testing_dir, '*.mp4'),
+        os.path.join(testing_dir, '*.avi'),
         os.path.join(DATASET_DIR, '*.mp4'),
         os.path.join(DATASET_DIR, '*.avi'),
         os.path.join(ROOT_DIR, '*.mp4'),
@@ -493,16 +498,17 @@ def process_videos(model, model_name='UNet_baseline'):
     
     if not video_files:
         print(f"\nNo video files found for processing")
+        print(f"Searched in: {testing_dir}, {DATASET_DIR}, {ROOT_DIR}")
         return
     
-    print(f"\nFound {len(video_files)} videos to process")
+    print(f"\nFound {len(video_files)} video(s) to process")
     
     for video_path in video_files:
         print(f"\nProcessing: {os.path.basename(video_path)}")
         try:
             output_path = predict_video(
                 model, model_name, video_path, PROCESSED_DIR,
-                target_width=320, target_height=180, device=device,
+                target_width=None, target_height=None, device=device,
                 train_id_to_color=train_id_to_color
             )
             print(f"Saved to: {output_path}")
@@ -519,20 +525,23 @@ def main():
     
     # Configuration
     MODEL_NAME = 'UNet_baseline'
-    N_EPOCHS = 25
     NUM_TEST_SAMPLES = 5
     
     # Flags to control execution
-    train_model_flag = True  # Set to True to train model
-    evaluate_model_flag = True
-    visualize_flag = True
-    process_videos_flag = False  # Set to True to process videos
+    train_model_flag = False  # Set to True to train model
+    evaluate_model_flag = False
+    visualize_flag = False
+    process_videos_flag = True  # Set to True to process videos
     
     # Step 1: Download and prepare data if needed
     download_and_prepare_data()
     
-    # Step 2: Load data
-    train_dataloader, val_dataloader, test_dataloader, test_set = load_data()
+    # Step 2: Load data (skip if only processing videos)
+    if train_model_flag or evaluate_model_flag or visualize_flag:
+        train_dataloader, val_dataloader, test_dataloader, test_set = load_data()
+    else:
+        print("\nSkipping data loading (only processing videos)")
+        train_dataloader = val_dataloader = test_dataloader = test_set = None
     
     # Step 3: Create model
     print("\nCreating UNet model...")
@@ -543,9 +552,19 @@ def main():
     # Step 4: Train model (if enabled)
     if train_model_flag:
         train_model(model, train_dataloader, val_dataloader, 
-                   num_epochs=N_EPOCHS, model_name=MODEL_NAME)
+                   num_epochs=MAX_EPOCHS, model_name=MODEL_NAME)
     else:
         print("\nSkipping training (train_model_flag=False)")
+        # Load trained model weights if available
+        model_path = os.path.join(MODELS_DIR, f'{MODEL_NAME}.pt')
+        if os.path.exists(model_path):
+            print(f"Loading trained model from: {model_path}")
+            model.load_state_dict(torch.load(model_path, map_location=device))
+            model.eval()
+            print("Model loaded successfully!")
+        else:
+            print(f"WARNING: No trained model found at {model_path}")
+            print("Video inference will use untrained model weights!")
     
     # Step 5: Evaluate model (if enabled)
     if evaluate_model_flag:

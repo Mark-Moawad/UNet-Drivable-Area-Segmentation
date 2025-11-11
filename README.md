@@ -1,10 +1,16 @@
-# UNet Drivable Area Segmentation
+# UNet Drivable Area Segmentation for Autonomous Driving
 
-This project implements drivable area segmentation using the UNet architecture on the BDD100K dataset. The model identifies three key areas in driving scenes: **ego lane** (direct drivable area), **adjacent lanes** (alternative drivable areas), and **background** (non-drivable areas).
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg)](https://pytorch.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+This project implements drivable area segmentation using the U-Net architecture on the BDD100K dataset. The model identifies three key areas in driving scenes: **ego lane** (direct drivable area), **adjacent lanes** (alternative drivable areas), and **background** (non-drivable areas).
 
 ![UNet Architecture](unet_architecture.png)
 
-*Image reference: [U-Net: Convolutional Networks for Biomedical Image Segmentation](https://arxiv.org/abs/1505.04597)*
+*U-Net Architecture - Original paper by Ronneberger et al.*
+
+---
 
 ## Dataset
 
@@ -30,230 +36,225 @@ This 3-class approach is essential for:
 - Drivable area detection for ADAS
 - Real-time decision making in autonomous vehicles
 
+---
+
+## Results & Performance
+
+### Training Statistics (100 Epochs)
+
+| Metric | Value |
+|--------|-------|
+| **Best Mean IoU** | **75.07%** |
+| **Best Validation Loss** | 0.2200 |
+| **Final Training Loss** | 0.0594 |
+| **Training Time** | ~2 hours (RTX 3060) |
+| **Inference Speed** | 30+ FPS (GPU) |
+
+### Training Curves
+
+![Training Curves](data/outputs/UNet_baseline_training_curves.png)
+
+The model demonstrates excellent convergence with steady decrease in training and validation loss, consistent improvement in mean IoU metric, and no overfitting observed (validation tracks training).
+
+---
+
+## Prediction Examples
+
+![Sample Predictions](data/outputs/UNet_baseline_predictions.png)
+
+The model accurately segments:
+- **Magenta regions**: Ego lane (safe to drive straight)
+- **Green regions**: Adjacent lanes (safe for lane changes)
+- **Black regions**: Non-drivable areas (obstacles, sidewalks, buildings)
+
+---
+
+## Video Inference Demonstrations
+
+The model performs real-time segmentation on various driving scenarios:
+
+### Highway Driving
+![Highway Demo](data/gifs/highway_1241_376_UNet_baseline_segmented.gif)
+
+![Urban Demo](data/gifs/project_video_UNet_baseline_segmented.gif)
+
+![Challenge 1](data/gifs/challenge_UNet_baseline_segmented.gif)
+
+![Challenge 2](data/gifs/challenge_video_UNet_baseline_segmented.gif)
+
+### Residential Area
+![Residential Demo](data/gifs/residential_1242_375_UNet_baseline_segmented.gif)
+
+### Campus Environment
+![Campus Demo](data/gifs/campus_1224_370_UNet_baseline_segmented.gif)
+
+#### Difficult Conditions
+![Hard Challenge](data/gifs/harder_challenge_video_UNet_baseline_segmented.gif)
+
+---
+
+## Model Architecture
+
+### U-Net Implementation Details
+
+The U-Net architecture consists of:
+
+**Encoder (Contracting Path)**
+- 4 downsampling blocks with max pooling
+- Layer channels: [64, 128, 256, 512]
+- Each block: 2× (Conv2D → BatchNorm → ReLU)
+
+**Bottleneck**
+- Double convolution at lowest resolution
+- 1024 channels for maximum feature extraction
+
+**Decoder (Expanding Path)**
+- 4 upsampling blocks with skip connections
+- Transposed convolutions for spatial resolution recovery
+- Feature fusion via concatenation with encoder outputs
+
+**Output Layer**
+- 1×1 convolution for 3-class pixel-wise classification
+- **Total Parameters**: 31,037,763
+
+### Training Configuration
+
+```python
+Loss Function: Dice Loss (multiclass)
+Optimizer: Adam
+Learning Rate: 3e-4 (OneCycleLR scheduler)
+Batch Size: 8
+Input Resolution: 180×320×3
+Output Classes: 3
+Data Split: 70% train, 20% val, 10% test
+```
+
+---
+
 ## Quick Start
 
 ### Prerequisites
-- Python 3.7+
-- CUDA-capable GPU (optional, but recommended for training)
+- Python 3.8+
+- CUDA-capable GPU (recommended for training)
+- 8GB+ RAM
+- 2GB+ disk space
 
 ### Installation
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Mark-Moawad/UNet-Drivable-Area-Segmentation.git
-   cd UNet-Drivable-Area-Segmentation
-   ```
+1. **Clone the repository**
+```bash
+git clone https://github.com/Mark-Moawad/UNet-Drivable-Area-Segmentation.git
+cd UNet-Drivable-Area-Segmentation
+```
 
-2. **Create virtual environment:**
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+2. **Create virtual environment**
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+3. **Install dependencies**
+```bash
+pip install -r requirements.txt
+```
 
-That's it! The dataset will be automatically downloaded when you run the training script for the first time.
+The dataset (BDD100K drivable area subset) will be automatically downloaded on first run.
+
+---
 
 ## Usage
 
-### Training
-
-The training script is designed to work out of the box. Simply run:
+### Training from Scratch
 
 ```bash
 python unet_segmentation.py
 ```
 
-The script will:
-1. Automatically download the dataset from Google Drive (first run only)
-2. Extract and organize the data
-3. Load pre-processed images and labels (180x320 resolution)
-4. Train the UNet model
-5. Save the trained model and training curves
-
-**Training Configuration:**
-- **Epochs**: 25 (default)
-- **Batch Size**: 8
-- **Learning Rate**: 3e-4 (OneCycleLR scheduler)
-- **Loss Function**: Dice Loss
-- **Dataset Split**: 70% train, 20% validation, 10% test
-- **Input Resolution**: 180x320x3
-- **Output Classes**: 3
-
-The trained model will be saved as `UNet_baseline.pt`.
-
-### Evaluation & Visualization
-
-After training completes, the script automatically:
-- Evaluates the model on the test set
-- Computes mean IoU metric
-- Generates prediction visualizations comparing:
-  - Original RGB images
-  - Ground truth labels
-  - Model predictions
+The script automatically:
+1. Downloads and extracts the BDD100K dataset (3,430 images)
+2. Splits data into train/val/test sets
+3. Trains the U-Net model with threshold-based early stopping
+4. Saves the best model checkpoint
+5. Generates training curves and prediction visualizations
 
 ### Video Inference
 
-To test the model on driving videos:
+To run inference on your own driving videos:
 
-1. **Download sample videos** (KITTI dataset examples):
-   ```bash
-   # Highway scene
-   gdown "1fs2Sc0OK1g9Epnl9PhoQyQEfBF3YYC7A"
-   
-   # Residential scene
-   gdown "1uosW46RhVD7ysFni1qY_XQI4mSlPzSHz"
-   
-   # Campus scene
-   gdown "1n5QxX6LIImRvrhrcnm9kA8HKAEb8MN0x"
-   ```
+1. **Enable video processing** in `unet_segmentation.py`:
+```python
+process_videos_flag = True
+```
 
-2. **Run inference** by modifying `unet_segmentation.py`:
-   ```python
-   from utils import predict_video
-   
-   predict_video(model, "UNet_drivable", "highway_1241_376.avi", 
-                 "segmentation", 1241, 376, "cuda", train_id_to_color)
-   ```
+2. **Place videos** in `data/dataset/testing/`
 
-## Model Architecture
+3. **Run inference**:
+```bash
+python unet_segmentation.py
+```
 
-The UNet model consists of:
-- **Encoder**: 4 downsampling blocks with max pooling
-  - Layer channels: [64, 128, 256, 512]
-  - Each block: 2 convolutional layers with BatchNorm and ReLU
-- **Bottleneck**: Double convolution at the lowest resolution (1024 channels)
-- **Decoder**: 4 upsampling blocks with skip connections
-  - Transposed convolutions for upsampling
-  - Skip connections from encoder for feature fusion
-- **Output**: 1x1 convolution to produce 3-class predictions
-
-**Total Parameters**: ~31M
-
-## Key Features
-
-### Automatic Dataset Download
-- No manual dataset preparation needed
-- Automatically downloads from Google Drive using `gdown`
-- Extracts and organizes data structure
-- Uses pre-processed 180x320 resolution images for fast training
-
-### Clean Python Script
-- Professional, well-documented code structure
-- No Jupyter notebook dependencies
-- Direct execution from command line
-- Comprehensive error handling and logging
-
-### Efficient Training
-- **Pre-processed Data**: Images resized to 180x320 for fast training
-- **ImageNet Normalization**: Better convergence and performance
-- **OneCycleLR Scheduler**: Optimal learning rate scheduling
-- **Dice Loss**: Better handling of class imbalance
-- **Model Checkpointing**: Saves best model based on validation loss
-
-### Quality Visualization
-- Color-coded predictions for easy interpretation:
-  - Magenta: Ego lane (where you're driving)
-  - Green: Adjacent lanes (where you can merge)
-  - Black: Non-drivable areas
-- Training curves automatically plotted and saved
-- Side-by-side comparison of ground truth vs predictions
-
-### Video Processing
-- Quality-preserving inference pipeline
-- Processes videos at original resolution
-- Fast inference on downsampled frames
-- Upscales predictions to match original video quality
-
-## Results
-
-With 25 epochs of training, the model achieves good performance on the BDD100K drivable area segmentation task:
-- Clear distinction between ego lane and adjacent lanes
-- Accurate identification of non-drivable areas
-- Real-time capable inference (~30 FPS on GPU)
-
-Sample predictions show:
-- **Magenta areas**: Current lane (safe to drive)
-- **Green areas**: Adjacent lanes (safe for lane changes)
-- **Black areas**: Non-drivable regions (avoid)
+Output videos with overlaid segmentation masks will be saved to `data/processed/`.
 
 ## Project Structure
 
 ```
 UNet-Drivable-Area-Segmentation/
-├── unet_segmentation.py       # Main script with training & inference
-├── utils.py                    # Utility functions (metrics, visualization, video processing)
-├── requirements.txt            # Python dependencies
-├── .gitignore                 # Git ignore file
-├── README.md                  # This file
-├── venv/                      # Virtual environment (created after setup)
-└── dataset/                   # Auto-downloaded dataset (created on first run)
-    ├── image_180_320.npy      # Pre-processed images (7,000 samples)
-    └── label_180_320.npy      # Pre-processed labels (7,000 samples)
+├── unet_segmentation.py          # Main training & inference pipeline
+├── utils.py                       # Utility functions (metrics, visualization)
+├── requirements.txt               # Python dependencies
+├── README.md                      # This file
+│
+├── data/
+│   ├── dataset/                   # BDD100K dataset (auto-downloaded)
+│   │   ├── image_180_320.npy     # Pre-processed images (3,430 samples)
+│   │   ├── label_180_320.npy     # Segmentation labels
+│   │   └── testing/              # Test videos for inference
+│   ├── models/                    # Trained model checkpoints
+│   │   ├── UNet_baseline.pt      # Best model weights
+│   │   └── UNet_baseline_training_stats.csv
+│   ├── outputs/                   # Training visualizations
+│   │   ├── UNet_baseline_training_curves.png
+│   │   └── UNet_baseline_predictions.png
+│   ├── processed/                 # Inference output videos
+│
+└── venv/                          # Python virtual environment
 ```
-
-## Dependencies
-
-Key libraries:
-- `torch>=1.10.0`: PyTorch deep learning framework
-- `torchvision>=0.11.0`: Computer vision utilities
-- `opencv-python>=4.5.0`: Video processing and image manipulation
-- `segmentation-models-pytorch>=0.3.0`: Dice loss implementation
-- `numpy>=1.19.0`: Numerical operations
-- `matplotlib>=3.3.0`: Visualization
-- `tqdm>=4.62.0`: Progress bars
-- `pandas>=1.3.0`: Data handling
-- `gdown>=4.7.1`: Google Drive file downloader
-
-See `requirements.txt` for complete list.
-
-## Training Tips
-
-- **GPU Recommended**: Training on CPU will be significantly slower
-- **Adjust Epochs**: You can modify `N_EPOCHS` in the script for longer/shorter training
-- **Batch Size**: Reduce if you encounter GPU memory issues
-- **Learning Rate**: The OneCycleLR scheduler automatically handles learning rate
-
-## Why This Project?
-
-This project demonstrates:
-- ✅ **Deep Learning Fundamentals**: U-Net architecture, encoder-decoder design
-- ✅ **Computer Vision**: Image segmentation, semantic understanding
-- ✅ **PyTorch Expertise**: Custom models, datasets, training loops
-- ✅ **Autonomous Driving**: Lane detection, drivable area segmentation
-- ✅ **Production Skills**: Quality-preserving inference, video processing
-- ✅ **Clean Code**: Well-documented, modular, easy to understand
-
-Perfect for showcasing computer vision and autonomous driving skills to recruiters!
+---
 
 ## References
 
-- **Original UNet Paper**: [U-Net: Convolutional Networks for Biomedical Image Segmentation](https://arxiv.org/abs/1505.04597)
-- **BDD100K Dataset**: [Berkeley DeepDrive](https://bdd-data.berkeley.edu/)
-- **BDD100K Paper**: [BDD100K: A Diverse Driving Video Database with Scalable Annotation Tooling](https://arxiv.org/abs/1805.04687)
+- **U-Net Paper**: [Convolutional Networks for Biomedical Image Segmentation](https://arxiv.org/abs/1505.04597) (Ronneberger et al., 2015)
+- **BDD100K Dataset**: [A Diverse Driving Video Database](https://arxiv.org/abs/1805.04687) (Yu et al., 2018)
+- **Berkeley DeepDrive**: [Official Website](https://bdd-data.berkeley.edu/)
+
+---
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
 
 ## Author
 
 **Mark Moawad**  
-Perception Engineer | Self-Driving Car Specialist
+*Perception Engineer | Computer Vision Specialist*
 
-This project showcases practical computer vision skills for autonomous driving applications, demonstrating the ability to implement, train, and deploy deep learning models for real-world driving scenarios.
+This project demonstrates practical computer vision and deep learning skills for autonomous driving applications, showcasing end-to-end development from model training to production-ready inference.
+
+---
 
 ## Acknowledgments
 
-- Original U-Net paper by Ronneberger et al.
-- BDD100K dataset team at Berkeley
+- Original U-Net architecture by Ronneberger, Fischer, and Brox
+- BDD100K dataset team at UC Berkeley
 - PyTorch and segmentation_models_pytorch communities
+---
 
 ## Contact
 
-For questions or collaboration opportunities, please reach out through GitHub.
-
+For questions, collaboration opportunities, or professional inquiries:
+- GitHub: [@Mark-Moawad](https://github.com/Mark-Moawad)
+- Email: [mark.moawad96@gmail.com](mark.moawad96@gmail.com)
+- LinkedIn: [https://www.linkedin.com/in/markmoawad96/](https://www.linkedin.com/in/markmoawad96/)
 

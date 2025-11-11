@@ -258,7 +258,7 @@ def visualize_predictions(model, dataset, axes, device, numTestSamples=5, id_to_
 
 
 def predict_video(model, model_name, video_path, output_dir, 
-                  target_width=320, target_height=180, device='cpu', 
+                  target_width=None, target_height=None, device='cpu', 
                   train_id_to_color=None):
     if train_id_to_color is None:
         train_id_to_color = globals()['train_id_to_color']
@@ -269,14 +269,41 @@ def predict_video(model, model_name, video_path, output_dir,
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     
+    # Use original video dimensions if not specified
+    if target_width is None:
+        target_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    if target_height is None:
+        target_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    
+    print(f"Output resolution: {target_width}x{target_height}")
+    
     os.makedirs(output_dir, exist_ok=True)
     video_name = os.path.basename(video_path).split('.')[0]
     output_path = os.path.join(output_dir, f'{video_name}_{model_name}_segmented.mp4')
     
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(output_path, fourcc, fps, (target_width * 2, target_height))
+    # Try different codecs - prioritize ones that work well on Windows
+    # XVID and MJPG are more reliable, mp4v is fallback
+    for codec in ['XVID', 'MJPG', 'mp4v', 'avc1']:
+        try:
+            fourcc = cv2.VideoWriter_fourcc(*codec)
+            out = cv2.VideoWriter(output_path, fourcc, fps, (target_width, target_height))
+            if out.isOpened():
+                print(f"Using codec: {codec}")
+                break
+        except:
+            continue
+    
+    if not out.isOpened():
+        raise RuntimeError("Could not open video writer with any codec")
     
     print(f"Processing {frame_count} frames...")
+    
+    # Model training resolution
+    MODEL_WIDTH = 320
+    MODEL_HEIGHT = 180
+    
+    # Alpha blending parameter (0.0 = only original, 1.0 = only segmentation)
+    alpha = 0.5
     
     with torch.no_grad():
         for _ in tqdm(range(frame_count)):
@@ -284,8 +311,12 @@ def predict_video(model, model_name, video_path, output_dir,
             if not ret:
                 break
             
+            # Resize original frame to output resolution
             frame_resized = cv2.resize(frame, (target_width, target_height))
-            frame_rgb = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGB)
+            
+            # Resize to model's training resolution for inference
+            frame_model = cv2.resize(frame, (MODEL_WIDTH, MODEL_HEIGHT))
+            frame_rgb = cv2.cvtColor(frame_model, cv2.COLOR_BGR2RGB)
             
             frame_tensor = preprocess(frame_rgb).unsqueeze(0).to(device)
             
@@ -295,9 +326,13 @@ def predict_video(model, model_name, video_path, output_dir,
             pred_rgb = train_id_to_color[predicted_label].astype(np.uint8)
             pred_bgr = cv2.cvtColor(pred_rgb, cv2.COLOR_RGB2BGR)
             
-            combined = np.hstack([frame_resized, pred_bgr])
+            # Upscale segmentation mask to match output resolution
+            pred_bgr_upscaled = cv2.resize(pred_bgr, (target_width, target_height), interpolation=cv2.INTER_NEAREST)
             
-            out.write(combined)
+            # Overlay segmentation mask on original frame with alpha blending
+            overlay = cv2.addWeighted(frame_resized, 1 - alpha, pred_bgr_upscaled, alpha, 0)
+            
+            out.write(overlay)
     
     cap.release()
     out.release()

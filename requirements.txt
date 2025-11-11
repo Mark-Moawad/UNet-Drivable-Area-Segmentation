@@ -1,5 +1,11 @@
-torch>=1.10.0
-torchvision>=0.11.0
+# Install PyTorch with CUDA 13.0 support by default
+# To install, use: pip install -r requirements.txt
+# For different CUDA versions or CPU-only, see: https://pytorch.org/get-started/locally/
+--extra-index-url https://download.pytorch.org/whl/cu130
+
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
 numpy>=1.19.0
 opencv-python>=4.5.0
 matplotlib>=3.3.0
