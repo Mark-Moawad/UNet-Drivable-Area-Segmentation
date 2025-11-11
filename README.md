@@ -74,16 +74,22 @@ The model accurately segments:
 The model performs real-time segmentation on various driving scenarios:
 
 ### Highway Driving
-![Highway Demo](media/highway_1241_376_UNet_baseline_segmented.gif)
+![Highway Demo 1](media/highway_1241_376_UNet_baseline_segmented.gif)
 
-![Urban Demo](media/project_video_UNet_baseline_segmented.gif)
+![Highway Demo 2](media/project_video_UNet_baseline_segmented.gif)
+
+![Highway Demo 3](media/solidWhiteRight_UNet_baseline_segmented.gif)
 
 ![Challenge 1](media/challenge_UNet_baseline_segmented.gif)
 
 ![Challenge 2](media/challenge_video_UNet_baseline_segmented.gif)
 
+![Challenge 3](media/solidYellowLeft_UNet_baseline_segmented.gif)
+
 ### Residential Area
 ![Residential Demo](media/residential_1242_375_UNet_baseline_segmented.gif)
+
+![Stuttgart](media/stuttgart_1024_512_UNet_baseline_segmented.gif)
 
 ### Campus Environment
 ![Campus Demo](media/campus_1224_370_UNet_baseline_segmented.gif)
