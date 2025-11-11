@@ -52,7 +52,7 @@ This 3-class approach is essential for:
 
 ### Training Curves
 
-![Training Curves](data/outputs/UNet_baseline_training_curves.png)
+![Training Curves](media/UNet_baseline_training_curves.png)
 
 The model demonstrates excellent convergence with steady decrease in training and validation loss, consistent improvement in mean IoU metric, and no overfitting observed (validation tracks training).
 
@@ -60,7 +60,7 @@ The model demonstrates excellent convergence with steady decrease in training an
 
 ## Prediction Examples
 
-![Sample Predictions](data/outputs/UNet_baseline_predictions.png)
+![Sample Predictions](media/UNet_baseline_predictions.png)
 
 The model accurately segments:
 - **Magenta regions**: Ego lane (safe to drive straight)
@@ -74,22 +74,22 @@ The model accurately segments:
 The model performs real-time segmentation on various driving scenarios:
 
 ### Highway Driving
-![Highway Demo](data/gifs/highway_1241_376_UNet_baseline_segmented.gif)
+![Highway Demo](media/highway_1241_376_UNet_baseline_segmented.gif)
 
-![Urban Demo](data/gifs/project_video_UNet_baseline_segmented.gif)
+![Urban Demo](media/project_video_UNet_baseline_segmented.gif)
 
-![Challenge 1](data/gifs/challenge_UNet_baseline_segmented.gif)
+![Challenge 1](media/challenge_UNet_baseline_segmented.gif)
 
-![Challenge 2](data/gifs/challenge_video_UNet_baseline_segmented.gif)
+![Challenge 2](media/challenge_video_UNet_baseline_segmented.gif)
 
 ### Residential Area
-![Residential Demo](data/gifs/residential_1242_375_UNet_baseline_segmented.gif)
+![Residential Demo](media/residential_1242_375_UNet_baseline_segmented.gif)
 
 ### Campus Environment
-![Campus Demo](data/gifs/campus_1224_370_UNet_baseline_segmented.gif)
+![Campus Demo](media/campus_1224_370_UNet_baseline_segmented.gif)
 
 #### Difficult Conditions
-![Hard Challenge](data/gifs/harder_challenge_video_UNet_baseline_segmented.gif)
+![Hard Challenge](media/harder_challenge_video_UNet_baseline_segmented.gif)
 
 ---
 
@@ -216,6 +216,8 @@ UNet-Drivable-Area-Segmentation/
 │   │   ├── UNet_baseline_training_curves.png
 │   │   └── UNet_baseline_predictions.png
 │   ├── processed/                 # Inference output videos
+│
+├── media/                         # Photos and demo videos for README
 │
 └── venv/                          # Python virtual environment
 ```
