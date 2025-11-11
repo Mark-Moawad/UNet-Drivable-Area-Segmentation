@@ -6,7 +6,7 @@
 
 This project implements drivable area segmentation using the U-Net architecture on the BDD100K dataset. The model identifies three key areas in driving scenes: **ego lane** (direct drivable area), **adjacent lanes** (alternative drivable areas), and **background** (non-drivable areas).
 
-![UNet Architecture](unet_architecture.png)
+![UNet Architecture](media/unet_architecture.png)
 
 *U-Net Architecture - Original paper by Ronneberger et al.*
 
