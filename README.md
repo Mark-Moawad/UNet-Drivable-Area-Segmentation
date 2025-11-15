@@ -246,7 +246,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Author
 
 **Mark Moawad**  
-*Perception Engineer | Computer Vision Specialist*
+*Autonomous Systems Engineer | Computer Vision Specialist*
 
 This project demonstrates practical computer vision and deep learning skills for autonomous driving applications, showcasing end-to-end development from model training to production-ready inference.
 
